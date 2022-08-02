@@ -1,3 +1,5 @@
+pub use std::os::unix::net::{UnixListener, UnixStream};
+
 mod socketaddr;
 pub use self::socketaddr::SocketAddr;
 

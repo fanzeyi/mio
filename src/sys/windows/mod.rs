@@ -35,6 +35,8 @@ cfg_net! {
 
     pub(crate) mod tcp;
     pub(crate) mod udp;
+    pub(crate) mod uds;
+    pub use self::uds::SocketAddr;
 }
 
 cfg_os_ext! {

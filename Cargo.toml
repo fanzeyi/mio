@@ -48,6 +48,9 @@ log = "0.4.8"
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.121"
 
+[target.'cfg(windows)'.dependencies]
+uds_windows = "1.0.2"  # TODO: maybe we need to switch it to windows-sys
+
 [target.'cfg(windows)'.dependencies.windows-sys]
 version = "0.36"
 features = [
@@ -96,4 +99,8 @@ required-features = ["os-poll", "net"]
 
 [[example]]
 name = "udp_server"
+required-features = ["os-poll", "net"]
+
+[[example]]
+name = "uds_server"
 required-features = ["os-poll", "net"]

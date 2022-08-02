@@ -1,15 +1,17 @@
 use crate::io_source::IoSource;
-use crate::net::{SocketAddr, UnixStream};
+use crate::net::UnixStream;
 use crate::{event, sys, Interest, Registry, Token};
 
+#[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-use std::os::unix::net;
+#[cfg(windows)]
+use std::os::windows::prelude::{AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket};
 use std::path::Path;
 use std::{fmt, io};
 
 /// A non-blocking Unix domain socket server.
 pub struct UnixListener {
-    inner: IoSource<net::UnixListener>,
+    inner: IoSource<sys::uds::UnixListener>,
 }
 
 impl UnixListener {
@@ -24,7 +26,7 @@ impl UnixListener {
     /// standard library in the Mio equivalent. The conversion assumes nothing
     /// about the underlying listener; it is left up to the user to set it in
     /// non-blocking mode.
-    pub fn from_std(listener: net::UnixListener) -> UnixListener {
+    pub fn from_std(listener: sys::uds::UnixListener) -> UnixListener {
         UnixListener {
             inner: IoSource::new(listener),
         }
@@ -34,7 +36,7 @@ impl UnixListener {
     ///
     /// The call is responsible for ensuring that the listening socket is in
     /// non-blocking mode.
-    pub fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
+    pub fn accept(&self) -> io::Result<(UnixStream, sys::SocketAddr)> {
         sys::uds::listener::accept(&self.inner)
     }
 
@@ -79,18 +81,21 @@ impl fmt::Debug for UnixListener {
     }
 }
 
+#[cfg(unix)]
 impl IntoRawFd for UnixListener {
     fn into_raw_fd(self) -> RawFd {
         self.inner.into_inner().into_raw_fd()
     }
 }
 
+#[cfg(unix)]
 impl AsRawFd for UnixListener {
     fn as_raw_fd(&self) -> RawFd {
         self.inner.as_raw_fd()
     }
 }
 
+#[cfg(unix)]
 impl FromRawFd for UnixListener {
     /// Converts a `RawFd` to a `UnixListener`.
     ///
@@ -100,5 +105,32 @@ impl FromRawFd for UnixListener {
     /// non-blocking mode.
     unsafe fn from_raw_fd(fd: RawFd) -> UnixListener {
         UnixListener::from_std(FromRawFd::from_raw_fd(fd))
+    }
+}
+
+#[cfg(windows)]
+impl IntoRawSocket for UnixListener {
+    fn into_raw_socket(self) -> RawSocket {
+        self.inner.into_inner().into_raw_socket()
+    }
+}
+
+#[cfg(windows)]
+impl AsRawSocket for UnixListener {
+    fn as_raw_socket(&self) -> RawSocket {
+        self.inner.as_raw_socket()
+    }
+}
+
+#[cfg(windows)]
+impl FromRawSocket for UnixListener {
+    /// Converts a `RawSocket` to a `UnixListener`.
+    ///
+    /// # Notes
+    ///
+    /// The caller is responsible for ensuring that the socket is in
+    /// non-blocking mode.
+    unsafe fn from_raw_socket(socket: RawSocket) -> UnixListener {
+        UnixListener::from_std(FromRawSocket::from_raw_socket(socket))
     }
 }
